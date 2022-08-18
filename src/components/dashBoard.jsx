@@ -8,40 +8,37 @@ import '../../node_modules/react-resizable/css/styles.css'
 import _ from "lodash";
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const originalLayouts = getFromLS("layouts") || {};
-
 /**
  * This layout demonstrates how to sync multiple responsive layouts to localstorage.
  */
 export default class DashBoard extends React.PureComponent {
   constructor(props) {
     super(props);
-
     this.state = {
       layouts: JSON.parse(JSON.stringify(originalLayouts)),
-      widgets:[]
+      widgets: originalLayouts.lg
     };
   }
 
   static get defaultProps() {
     return {
       className: "layout",
-      cols: { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
+      cols: { lg: 12 },
       rowHeight: 30
     };
   }
 
   resetLayout() {
     this.setState({ layouts: {} });
+    this.setState({ widgets: [] });
   }
 
   onLayoutChange(layout, layouts) {
     saveToLS("layouts", layouts);
     this.setState({ layouts });
-    console.log(layouts);
   }
 
   onRemoveItem(i) {
-    console.log(this.state.widgets)
     this.setState({
       widgets: this.state.widgets.filter((item,index) => index !== i)
     });
@@ -52,14 +49,15 @@ export default class DashBoard extends React.PureComponent {
   generateDOM = () => {
     return _.map(this.state.widgets, (l, i) => {
       let component = (
-        <Card 
-          data-grid={{ w: 2, h: 3, x: 0, y: 0, minW: 1, minH: 1 }}>
-            <Card.Text>{l.type}</Card.Text>
-          </Card>
+        <Card >
+          <Card.Header >
+            <span className='remove' onClick={this.onRemoveItem.bind(this, i)} style={{textAlign:"match-parent"}}>{"l.type"}<CloseButton /></span>
+          </Card.Header>
+          <Card.Text>{"l.type"}</Card.Text>
+        </Card>
       )
       return (
         <div key={l.i} data-grid={l}>
-          <span className='remove' onClick={this.onRemoveItem.bind(this, i)}><CloseButton /></span>
           {component}
         </div>
       );
@@ -85,12 +83,13 @@ export default class DashBoard extends React.PureComponent {
   };
   render() {
     return (
-      <div className='p-5'>
+      <div className='p-5' style={{width: '1440px', margin: 'auto'}}>
         <Button onClick={() => this.resetLayout()}>Reset Layout</Button>
         <Button onClick={() => this.addItems()}>Add</Button>
         <ResponsiveReactGridLayout
           className="layout"
           {...this.props}
+          width="flex"
           layouts={this.state.layouts}
           onLayoutChange={(layout, layouts) =>
             this.onLayoutChange(layout, layouts)
