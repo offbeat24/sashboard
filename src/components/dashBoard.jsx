@@ -36,10 +36,6 @@ export default class DashBoard extends React.PureComponent {
   onLayoutChange(layout, layouts) {
     saveToLS("layouts", layouts);
     this.setState({ layouts });
-<<<<<<< Updated upstream
-=======
-      console.log(layouts);
->>>>>>> Stashed changes
   }
 
   onRemoveItem(i) {
