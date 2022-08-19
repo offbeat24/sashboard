@@ -6,6 +6,7 @@ import CloseButton from 'react-bootstrap/CloseButton';
 import '../../node_modules/react-grid-layout/css/styles.css'
 import '../../node_modules/react-resizable/css/styles.css'
 import _ from "lodash";
+import axios from 'axios';
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const originalLayouts = getFromLS("layouts") || {};
 /**
@@ -18,6 +19,8 @@ export default class DashBoard extends React.PureComponent {
       layouts: JSON.parse(JSON.stringify(originalLayouts)),
       widgets: originalLayouts.lg
     };
+    console.log(typeof(JSON.stringify(originalLayouts)))
+    console.log(originalLayouts.lg)
   }
 
   static get defaultProps() {
@@ -51,9 +54,9 @@ export default class DashBoard extends React.PureComponent {
       let component = (
         <Card >
           <Card.Header >
-            <span className='remove' onClick={this.onRemoveItem.bind(this, i)} style={{textAlign:"match-parent"}}>{"l.type"}<CloseButton /></span>
+            <span className='remove' onClick={this.onRemoveItem.bind(this, i)} style={{textAlign:"match-parent"}}>{"id"}<CloseButton /></span>
           </Card.Header>
-          <Card.Text>{"l.type"}</Card.Text>
+          <Card.Text>{(l.x)}</Card.Text>
         </Card>
       )
       return (
@@ -80,7 +83,6 @@ export default class DashBoard extends React.PureComponent {
         }),
       },
     );
-    console.log(this.state.widgets)
   };
   render() {
     return (
@@ -102,8 +104,16 @@ export default class DashBoard extends React.PureComponent {
     );
   }
 }
+const getFromDBtoLS = async () => {
+  await axios.get(
+      `${url}/getUserProfile`
+  ).then(response => {
+    saveToLS("layouts", response.data);
+  })
+}
 
 function getFromLS(key) {
+  getFromDBtoLS();
   let ls = {};
   if (global.localStorage) {
     try {
@@ -116,13 +126,25 @@ function getFromLS(key) {
 }
 
 function saveToLS(key, value) {
+  const data = JSON.stringify({[key]: value})
+
   if (global.localStorage) {
     global.localStorage.setItem(
       "rgl-8",
-      JSON.stringify({
-        [key]: value
-      })
+      data
     );
+  }
+  saveToDB(data);
+}
+const saveToDB = async (data) => {
+  try {
+    const response = await axios.put(
+      `url`,
+      data
+    );
+    console.log(response.data)
+  } catch(e) {
+    console.log(e)
   }
 }
 
