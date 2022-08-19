@@ -1,6 +1,8 @@
 import { React } from 'react';
 import NavigationBar from './navigationBar';
 import DashBoard from './dashBoard';
+import axios from 'axios';
+
 function MainPage() {
   return(
     <>
@@ -11,3 +13,4 @@ function MainPage() {
 }
 
 export default MainPage;
+
