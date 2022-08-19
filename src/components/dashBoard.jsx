@@ -7,6 +7,7 @@ import '../../node_modules/react-grid-layout/css/styles.css'
 import '../../node_modules/react-resizable/css/styles.css'
 import _ from "lodash";
 import axios from 'axios';
+
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 const originalLayouts = getFromLS("layouts") || {};
 /**
@@ -19,8 +20,8 @@ export default class DashBoard extends React.PureComponent {
       layouts: JSON.parse(JSON.stringify(originalLayouts)),
       widgets: originalLayouts.lg
     };
-    console.log(typeof(JSON.stringify(originalLayouts)))
-    console.log(originalLayouts.lg)
+    //console.log(typeof(JSON.stringify(originalLayouts)))
+    //console.log(originalLayouts.lg)
   }
 
   static get defaultProps() {
@@ -40,23 +41,47 @@ export default class DashBoard extends React.PureComponent {
     saveToLS("layouts", layouts);
     this.setState({ layouts });
   }
-
+  deleteMemo = async(id) => {
+    await axios.delete(
+      `http://ec2-54-84-166-38.compute-1.amazonaws.com:8000/memo/deleteMemoDetail?id=${id}`
+    )
+    //console.log('Delete_Memo')
+  }
   onRemoveItem(i) {
+    this.deleteMemo(i)
     this.setState({
       widgets: this.state.widgets.filter((item,index) => index !== i)
     });
 
   }
 
+  createMemo(id) {
+    console.log(id)
+    axios.post(
+      `http://ec2-54-84-166-38.compute-1.amazonaws.com:8000/memo/createMemoDetail/`,
+      {
+        header: {Authorization:localStorage.getItem('auth-token')},
+      },
+      {
+        "i" : id,
+        "title" : "",
+        "content" : ""
+      }
+  ).then(response=>{
+      console.log(response.data)
+  })
+  console.log('check_create')
+  
+  };
 
   generateDOM = () => {
     return _.map(this.state.widgets, (l, i) => {
       let component = (
         <Card >
           <Card.Header >
-            <span className='remove' onClick={this.onRemoveItem.bind(this, i)} style={{textAlign:"match-parent"}}>{"id"}<CloseButton /></span>
+            <span className='remove' onClick={this.onRemoveItem.bind(this, l.i)} style={{textAlign:"match-parent"}}>{"id"}<CloseButton /></span>
           </Card.Header>
-          <Card.Text>{(l.x)}</Card.Text>
+          <Card.Text>{(l.i)}</Card.Text>
         </Card>
       )
       return (
@@ -67,7 +92,7 @@ export default class DashBoard extends React.PureComponent {
     });
   }
 
-  addItems(type) {
+  addItems() {
     const addItem = {
       x: (this.state.widgets.length * 3) % (this.state.cols || 12),
       y: Infinity, // puts it at the bottom
@@ -75,11 +100,11 @@ export default class DashBoard extends React.PureComponent {
       h: 2,
       i: new Date().getTime().toString(),
     };
+    this.createMemo(addItem.i)
     this.setState(
       {
         widgets: this.state.widgets.concat({
           ...addItem,
-          type,
         }),
       },
     );
@@ -104,12 +129,30 @@ export default class DashBoard extends React.PureComponent {
     );
   }
 }
-const getFromDBtoLS = async () => {
-  await axios.get(
-      `${url}/getUserProfile`
+function saveToLS(key, value) {
+  const data = JSON.stringify({ [key]: value })
+  console.log(data)
+  if (global.localStorage) {
+    global.localStorage.setItem(
+      "rgl-8",
+      data
+    );
+  }
+  saveToDB(data);
+}
+
+async function getFromDBtoLS (){
+  try{ await axios.get(
+      `http://ec2-54-84-166-38.compute-1.amazonaws.com:8000/memo/getMemo/`,
+      {
+        header:{Authorization:localStorage.getItem('auth-token')}
+      }
   ).then(response => {
+    //console.log(response);
     saveToLS("layouts", response.data);
-  })
+  })} catch (e) {
+    console.log(e)
+  }
 }
 
 function getFromLS(key) {
@@ -119,30 +162,29 @@ function getFromLS(key) {
     try {
       ls = JSON.parse(global.localStorage.getItem("rgl-8")) || {};
     } catch (e) {
-      /*Ignore*/
+      console.log(e)
     }
   }
   return ls[key];
 }
 
-function saveToLS(key, value) {
-  const data = JSON.stringify({[key]: value})
 
-  if (global.localStorage) {
-    global.localStorage.setItem(
-      "rgl-8",
-      data
-    );
-  }
-  saveToDB(data);
-}
-const saveToDB = async (data) => {
+
+const saveToDB = async(data) => {
   try {
-    const response = await axios.put(
-      `url`,
-      data
-    );
-    console.log(response.data)
+    console.log(data)
+    console.log(typeof(data))
+    const response = await axios.post(
+      `http://ec2-54-84-166-38.compute-1.amazonaws.com:8000/memo/setMemo/`,
+      {
+        header:{Authorization:localStorage.getItem('auth-token')}
+      },
+      {
+        i : data
+      }
+    ).then(response =>
+      console.log(response.data)
+      );
   } catch(e) {
     console.log(e)
   }
@@ -153,3 +195,5 @@ const saveToDB = async (data) => {
 //     fn.default(DashBoard)
 //   );
 // }
+
+
